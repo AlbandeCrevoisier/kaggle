@@ -29,17 +29,17 @@ ct = ColumnTransformer([('cat', cat_pipe, cat),
                         remainder=num_pipe,
                         n_jobs=-1)
 
-ml_pipe = Pipeline([('ct', ct),
+clf_pipe = Pipeline([('ct', ct),
                     ('clf', RandomForestClassifier(n_estimators=100,
                                                    n_jobs=-1))])
-ml_pipe.fit(X, y)
+clf_pipe.fit(X, y)
 
-print(cross_val_score(ml_pipe, X, y, cv=10).mean())
+print(cross_val_score(clf_pipe, X, y, cv=10).mean())
 
 test = pd.read_csv("test.csv", index_col='PassengerId')
 test = test.drop(['Name', 'Ticket', 'Cabin'], axis=1)
 
 p = pd.DataFrame({'PassengerId': test.index,
-                  'Survived': ml_pipe.predict(test)})
+                  'Survived': clf_pipe.predict(test)})
 p.to_csv("sub.csv", index=False)
 
