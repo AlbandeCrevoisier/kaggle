@@ -30,5 +30,12 @@ numerical_features = ['LotFrontage',
 X = train[['SalePrice'] + numerical_features].dropna()
 y = X.pop('SalePrice').values
 
-gbr = GradientBoostingRegressor()
-print(cross_val_score(gbr, X, y, cv=10).mean())
+gbrt = GradientBoostingRegressor()
+gbrt.fit(X, y)
+
+test = pd.read_csv("test.csv", index_col='Id')
+test = test[numerical_features].fillna(test.mean())
+
+p = pd.DataFrame({'Id': test.index,
+                  'SalePrice': gbrt.predict(test)})
+p.to_csv("sub.csv", index=False)
