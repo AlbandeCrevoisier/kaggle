@@ -1,6 +1,11 @@
 import pandas as pd
-from sklearn.model_selection import cross_val_score
+from sklearn.pipeline import make_pipeline
+from sklearn.compose import make_column_transformer
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import BayesianRidge
+from sklearn.model_selection import cross_val_score
 
 
 train = pd.read_csv("train.csv")
@@ -28,16 +33,25 @@ categorical_features = [
 X = train[['SalePrice'] + numerical_features + categorical_features].dropna()
 y = X.pop('SalePrice').values
 
-#TODO pipe to handle categorical_features
+num_pipe = make_pipeline(
+    SimpleImputer(),
+    StandardScaler())
+cat_pipe = make_pipeline(
+    SimpleImputer(strategy='most_frequent'),
+    OneHotEncoder(sparse=False, handle_unknown='ignore'))
 
-br = BayesianRidge()
-print(cross_val_score(br, X, y, cv=5).mean())
-br.fit(X, y)
+ct = make_column_transformer(
+    (num_pipe, numerical_features),
+    (cat_pipe, categorical_features),
+    n_jobs=-1)
+clf = make_pipeline(ct, BayesianRidge())
+
+print(cross_val_score(clf, X, y, cv=5).mean())
+clf.fit(X, y)
 
 test = pd.read_csv("test.csv", index_col='Id')
-test = test[numerical_features + categorical_features].fillna(test.mean())
 
 p = pd.DataFrame(
-    {'SalePrice': br.predict(test)},
+    {'SalePrice': clf.predict(test)},
     test.index)
 p.to_csv("sub.csv")
